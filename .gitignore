@@ -38,6 +38,11 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# environment variables (contient des secrets, ne jamais commiter)
+.env
+.env.*
+!.env.example
+
 .nx/cache
 .nx/workspace-data
 .nx/migrate-runs
@@ -45,3 +50,6 @@ Thumbs.db
 .claude/settings.local.json
 
 .angular
+
+# client Prisma généré automatiquement (régénéré via `pnpm exec prisma generate`)
+/generated
