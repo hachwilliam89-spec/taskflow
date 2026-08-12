@@ -15,7 +15,8 @@
     "skipDefaultLibCheck": true,
     "strict": false,
     "paths": {
-      "@taskflow/types": ["./libs/shared/types/src/index.ts"]
+      "@taskflow/types": ["./libs/shared/types/src/index.ts"],
+      "@taskflow/prisma-client": ["./generated/prisma/client.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
