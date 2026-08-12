@@ -1,6 +1,7 @@
 allowBuilds:
   '@parcel/watcher': true
   '@prisma/engines': true
+  '@scarf/scarf': false # telemetrie d'installation (scarf.sh) via swagger-ui-express, non necessaire au fonctionnement
   esbuild: true
   less: true
   lmdb: true

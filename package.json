@@ -2,7 +2,9 @@
   "name": "@taskflow/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "backend:dev": "lsof -ti :3001 | xargs kill -9 2>/dev/null; nx serve backend"
+  },
   "private": true,
   "dependencies": {
     "@angular/common": "~22.0.4",
@@ -15,6 +17,7 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/swagger": "^11.4.6",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "axios": "^1.6.0",
@@ -22,7 +25,8 @@
     "class-validator": "^0.15.1",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.0",
-    "rxjs": "~7.8.0"
+    "rxjs": "~7.8.0",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@angular-devkit/core": "~22.0.0",
@@ -49,6 +53,7 @@
     "@playwright/test": "^1.37.0",
     "@schematics/angular": "~22.0.4",
     "@swc/helpers": "~0.5.18",
+    "@types/express": "^5.0.6",
     "@types/jest": "~30.0.0",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.21.0",
