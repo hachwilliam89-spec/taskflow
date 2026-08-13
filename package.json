@@ -3,9 +3,18 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "backend:dev": "lsof -ti :3001 | xargs kill -9 2>/dev/null; nx serve backend"
+    "backend:dev": "lsof -ti :3001 | xargs kill -9 2>/dev/null; nx serve backend",
+    "prepare": "husky"
   },
   "private": true,
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
   "dependencies": {
     "@angular/common": "~22.0.4",
     "@angular/compiler": "~22.0.4",
@@ -15,9 +24,11 @@
     "@angular/platform-browser-dynamic": "~22.0.4",
     "@angular/router": "~22.0.4",
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.4.6",
+    "@nestjs/terminus": "^11.1.1",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "axios": "^1.6.0",
@@ -26,7 +37,8 @@
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "~7.8.0",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@angular-devkit/core": "~22.0.0",
@@ -63,11 +75,13 @@
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-playwright": "^1.6.2",
+    "husky": "^9.1.7",
     "jest": "~30.3.0",
     "jest-environment-jsdom": "~30.3.0",
     "jest-environment-node": "~30.3.0",
     "jest-preset-angular": "~17.0.0",
     "jest-util": "~30.3.0",
+    "lint-staged": "^17.3.0",
     "nx": "23.1.1",
     "prettier": "~3.6.2",
     "prisma": "^7.9.1",

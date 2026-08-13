@@ -13,6 +13,17 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
+
+  // CORS : sans ça, le navigateur bloque les requêtes venant d'une origine
+  // différente (ex: Angular sur localhost:4200 qui appelle l'API sur
+  // localhost:3001). CORS n'est pas une protection de l'API elle-même,
+  // c'est une règle appliquée par le NAVIGATEUR côté client — un outil
+  // comme curl ou Postman n'est jamais concerné.
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN?.split(',') ?? 'http://localhost:4200',
+    credentials: true,
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

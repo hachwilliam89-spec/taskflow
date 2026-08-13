@@ -1,0 +1,69 @@
+name: CI
+
+# Se déclenche sur toute push et toute pull request vers main ou develop —
+# donc y compris tes push sur les branches feature/* si elles ouvrent une PR.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    # Un vrai Postgres pour que les tests e2e (futurs) puissent s'y connecter,
+    # comme en local avec docker-compose. "services" = un conteneur Docker
+    # démarré par GitHub Actions AVANT le job, accessible via localhost.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: taskflow
+          POSTGRES_USER: taskflow_user
+          POSTGRES_PASSWORD: taskflow_dev_password
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://taskflow_user:taskflow_dev_password@localhost:5433/taskflow
+      NODE_ENV: test
+      PORT: 3001
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      # corepack = l'outil livré avec Node qui active la bonne version de
+      # pnpm déclarée dans "packageManager" (package.json) — même mécanisme
+      # que sur ta machine, pas besoin d'installer pnpm séparément.
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm exec prisma generate
+
+      - name: Run migrations
+        run: pnpm exec prisma migrate deploy
+
+      - name: Lint
+        run: pnpm nx run-many -t lint
+
+      - name: Unit tests
+        run: pnpm nx run-many -t test
+
+      - name: Build
+        run: pnpm nx run-many -t build
