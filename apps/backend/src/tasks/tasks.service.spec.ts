@@ -3,6 +3,11 @@ import { NotFoundException } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
+// Ce fichier n'existe pas encore — c'est volontaire, première brique du
+// "rouge" : le simple fait que ce fichier soit introuvable va déjà faire
+// planter le test (erreur "Cannot find module"), avant même de parler de
+// logique métier.
+import { UpdateTaskDto } from './dto/update-task.dto';
 
 // On ne se connecte PAS à une vraie base de données dans un test unitaire :
 // on remplace PrismaService par un faux objet dont chaque méthode utilisée
@@ -18,6 +23,7 @@ describe('TasksService', () => {
       count: jest.Mock;
       findUnique: jest.Mock;
       create: jest.Mock;
+      update: jest.Mock;
     };
   };
 
@@ -28,6 +34,7 @@ describe('TasksService', () => {
         count: jest.fn(),
         findUnique: jest.fn(),
         create: jest.fn(),
+        update: jest.fn(),
       },
     };
 
@@ -109,6 +116,38 @@ describe('TasksService', () => {
 
       await expect(service.create(dto as never)).resolves.toEqual(created);
       expect(prisma.task.create).toHaveBeenCalledWith({ data: dto });
+    });
+  });
+
+  // Le comportement attendu, écrit AVANT que update() n'existe sur
+  // TasksService : à ce stade, `service.update` n'existe même pas encore,
+  // donc TypeScript va refuser de compiler ce fichier — c'est le "rouge",
+  // juste sous une autre forme qu'un test qui s'exécute et échoue.
+  describe('update', () => {
+    it('vérifie que la tâche existe (réutilise findOne), puis appelle prisma.task.update', async () => {
+      const existing = { id: 1, title: 'Task 1', completed: false };
+      const updated = { ...existing, completed: true };
+      // findUnique est utilisé en interne par findOne() pour vérifier que
+      // la tâche existe avant de la modifier.
+      prisma.task.findUnique.mockResolvedValue(existing);
+      prisma.task.update.mockResolvedValue(updated);
+
+      const dto: UpdateTaskDto = { completed: true };
+
+      await expect(service.update(1, dto)).resolves.toEqual(updated);
+      expect(prisma.task.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: dto,
+      });
+    });
+
+    it("lève NotFoundException si la tâche n'existe pas, et n'appelle jamais prisma.task.update", async () => {
+      prisma.task.findUnique.mockResolvedValue(null);
+
+      await expect(service.update(999, { completed: true })).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(prisma.task.update).not.toHaveBeenCalled();
     });
   });
 });

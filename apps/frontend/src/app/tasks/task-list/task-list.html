@@ -33,6 +33,20 @@
            UNIQUEMENT si task.completed vaut true — et l'enlève
            automatiquement si ça redevient false. -->
       <li class="task-item" [class.completed]="task.completed">
+        <!-- Ici on n'utilise PAS [(ngModel)] comme pour le champ texte plus
+             haut, volontairement : [(ngModel)] modifierait task.completed
+             directement et localement, en contournant l'appel à l'API — la
+             case se cocherait visuellement, mais rien ne serait sauvegardé
+             côté serveur. On veut plutôt : lire l'état actuel avec
+             [checked] (one-way, données → écran), et sur (change),
+             déclencher NOUS-MÊMES l'appel à l'API — c'est seulement quand
+             la réponse revient qu'on met à jour l'affichage (voir
+             toggleCompleted() dans task-list.ts). -->
+        <input
+          type="checkbox"
+          [checked]="task.completed"
+          (change)="toggleCompleted(task)"
+        />
         <span>{{ task.title }}</span>
       </li>
     }

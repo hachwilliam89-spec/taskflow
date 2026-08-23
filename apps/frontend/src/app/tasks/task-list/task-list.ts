@@ -70,4 +70,25 @@ export class TaskList implements OnInit {
       },
     });
   }
+
+  protected toggleCompleted(task: Task): void {
+    this.tasksService
+      .update(task.id, { completed: !task.completed })
+      .subscribe({
+        next: (updated) => {
+          // .map() construit un NOUVEAU tableau où seule la tâche
+          // concernée est remplacée par sa version à jour — les autres
+          // sont recopiées telles quelles. On ne modifie jamais un objet
+          // Task existant "sur place" (ex: task.completed = true) : on
+          // remplace toujours par un nouvel objet. C'est important pour
+          // qu'Angular détecte correctement le changement.
+          this.tasks.update((current) =>
+            current.map((t) => (t.id === updated.id ? updated : t)),
+          );
+        },
+        error: (err) => {
+          console.error('Erreur lors de la mise à jour de la tâche', err);
+        },
+      });
+  }
 }

@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { ErrorResponseDto } from '../common/dto/error-response.dto';
 
@@ -60,5 +62,29 @@ export class TasksController {
   })
   create(@Body() dto: CreateTaskDto) {
     return this.tasksService.create(dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Mettre à jour une tâche (partiel)',
+    description:
+      'Accepte un sous-ensemble des champs (ex: { "completed": true } pour ' +
+      'marquer une tâche comme terminée) — pas besoin de renvoyer les champs ' +
+      "inchangés, contrairement à un PUT qui remplacerait toute la ressource.",
+  })
+  @ApiOkResponse({ description: 'Tâche mise à jour' })
+  @ApiNotFoundResponse({
+    description: 'Aucune tâche avec cet id',
+    type: ErrorResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'DTO invalide',
+    type: ErrorResponseDto,
+  })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTaskDto,
+  ) {
+    return this.tasksService.update(id, dto);
   }
 }

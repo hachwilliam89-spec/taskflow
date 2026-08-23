@@ -27,6 +27,14 @@ export interface CreateTaskPayload {
   completed?: boolean;
 }
 
+// Ce que le frontend envoie pour une mise à jour PARTIELLE — reflète
+// UpdateTaskDto côté Nest (dto/update-task.dto.ts), qui utilise
+// PartialType(CreateTaskDto) pour rendre tous les champs optionnels.
+// Partial<T> est l'équivalent TypeScript natif de ce même principe : il
+// prend un type existant et rend chacun de ses champs optionnel, sans
+// avoir à les retaper à la main.
+export type UpdateTaskPayload = Partial<CreateTaskPayload>;
+
 export interface PaginationMeta {
   page: number;
   limit: number;

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 import {
   PaginatedResult,
   PaginationQueryDto,
@@ -47,5 +48,16 @@ export class TasksService {
 
   create(dto: CreateTaskDto) {
     return this.prisma.task.create({ data: dto });
+  }
+
+  async update(id: number, dto: UpdateTaskDto) {
+    // On réutilise findOne() : elle lève déjà NotFoundException si la
+    // tâche n'existe pas, avec le même message/comportement que partout
+    // ailleurs — pas de raison de dupliquer cette logique ici. On ignore
+    // volontairement la valeur renvoyée (juste besoin de savoir "ça
+    // existe", pas de la relire deux fois).
+    await this.findOne(id);
+
+    return this.prisma.task.update({ where: { id }, data: dto });
   }
 }

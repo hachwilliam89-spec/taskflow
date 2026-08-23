@@ -4,6 +4,7 @@
   "license": "MIT",
   "scripts": {
     "backend:dev": "lsof -ti :3001 | xargs kill -9 2>/dev/null; nx serve backend",
+    "frontend:dev": "lsof -ti :4200 | xargs kill -9 2>/dev/null; nx serve frontend",
     "prepare": "husky"
   },
   "private": true,

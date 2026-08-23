@@ -7,6 +7,7 @@ import {
   CreateTaskPayload,
   PaginatedResult,
   Task,
+  UpdateTaskPayload,
 } from '@taskflow/types';
 import { environment } from '../../environments/environment';
 
@@ -63,6 +64,16 @@ export class TasksService {
   create(payload: CreateTaskPayload): Observable<Task> {
     return this.http
       .post<ApiSuccessResponse<Task>>(this.baseUrl, payload)
+      .pipe(map((response) => response.data));
+  }
+
+  // http.patch() : même principe que .get()/.post(), juste le verbe HTTP
+  // qui change — il correspond exactement à @Patch(':id') côté Nest, y
+  // compris la sémantique "mise à jour partielle" (on n'envoie que
+  // { completed: true }, pas toute la tâche).
+  update(id: number, payload: UpdateTaskPayload): Observable<Task> {
+    return this.http
+      .patch<ApiSuccessResponse<Task>>(`${this.baseUrl}/${id}`, payload)
       .pipe(map((response) => response.data));
   }
 }
