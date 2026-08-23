@@ -5,7 +5,7 @@ TaskFlow est un gestionnaire de tâches (à la Todoist en plus simple) construit
 Techniquement, c'est un **monorepo Nx** qui contient :
 
 - un **backend** NestJS (API REST + PostgreSQL via Prisma)
-- un **frontend** Angular (en cours de construction)
+- un **frontend** Angular (écran de liste de tâches fonctionnel : affichage, création, marquer comme terminée)
 - une **librairie partagée** de types TypeScript utilisée par les deux
 
 Si tu es en train de (re)découvrir ce projet, la section [Concepts expliqués](#concepts-expliqués) plus bas résume, en langage simple, chaque brique technique utilisée.
@@ -54,8 +54,11 @@ pnpm install
 
 # 4. Copier le fichier d'environnement d'exemple, puis le compléter
 cp .env.example .env
-# (DATABASE_URL, PORT, CORS_ORIGIN sont déjà pré-remplis avec des valeurs
-#  qui marchent pour un environnement local — rien à changer a priori)
+# (DATABASE_URL, BACKEND_PORT, CORS_ORIGIN sont déjà pré-remplis avec des
+#  valeurs qui marchent pour un environnement local — rien à changer a priori.
+#  BACKEND_PORT (et pas juste PORT) : dans un monorepo, un nom trop générique
+#  comme PORT est lu par TOUS les projets — Angular aussi lirait cette
+#  variable et se lancerait sur le mauvais port. D'où le préfixe explicite.)
 
 # 5. Démarrer PostgreSQL dans Docker
 docker compose up -d
@@ -75,10 +78,10 @@ pnpm exec husky init
 pnpm backend:dev
 
 # Frontend (app sur http://localhost:4200)
-pnpm nx serve frontend
+pnpm frontend:dev
 ```
 
-`pnpm backend:dev` (plutôt que `pnpm nx serve backend` directement) existe parce que le serveur NestJS laisse parfois un processus "fantôme" occupé sur le port après un crash ou un arrêt brutal — ce script tue automatiquement tout ce qui écoute sur le port 3001 avant de redémarrer, pour éviter l'erreur classique `Waiting for backend:serve:development in another nx process`.
+`pnpm backend:dev` et `pnpm frontend:dev` (plutôt que `pnpm nx serve backend`/`frontend` directement) existent parce que ces serveurs laissent parfois un processus "fantôme" occupé sur leur port après un crash ou un arrêt brutal — ces scripts tuent automatiquement tout ce qui écoute sur le port concerné (3001 ou 4200) avant de redémarrer, pour éviter l'erreur classique `Waiting for .../serve:development in another nx process`.
 
 Une fois le backend lancé :
 
@@ -106,12 +109,13 @@ Ces mêmes commandes tournent automatiquement sur GitHub à chaque push/pull req
 
 ## API actuelle
 
-| Méthode | Route                     | Description                                |
-| ------- | ------------------------- | ------------------------------------------ |
-| `GET`   | `/api/tasks?page=&limit=` | Liste paginée des tâches                   |
-| `GET`   | `/api/tasks/:id`          | Détail d'une tâche                         |
-| `POST`  | `/api/tasks`              | Créer une tâche                            |
-| `GET`   | `/api/health`             | État de l'API et de sa connexion à la base |
+| Méthode | Route                     | Description                                                          |
+| ------- | ------------------------- | -------------------------------------------------------------------- |
+| `GET`   | `/api/tasks?page=&limit=` | Liste paginée des tâches                                             |
+| `GET`   | `/api/tasks/:id`          | Détail d'une tâche                                                   |
+| `POST`  | `/api/tasks`              | Créer une tâche                                                      |
+| `PATCH` | `/api/tasks/:id`          | Mettre à jour une tâche partiellement (ex : `{ "completed": true }`) |
+| `GET`   | `/api/health`             | État de l'API et de sa connexion à la base                           |
 
 Toute réponse réussie est enveloppée sous la forme `{ success: true, data: ..., timestamp: ... }`, et toute erreur sous la forme `{ statusCode, message, error, timestamp, path }` — voir [Concepts expliqués](#concepts-expliqués) pour le pourquoi.
 
@@ -152,7 +156,7 @@ Cette section résume, en langage simple, chaque brique du projet — utile si t
 
 **CORS** — une règle de sécurité appliquée par le navigateur (pas par l'API elle-même) qui bloque par défaut les requêtes faites depuis un domaine différent de celui de l'API. Comme le frontend Angular (port 4200) et le backend NestJS (port 3001) tournent sur des ports différents en développement, l'API doit explicitement autoriser cette origine — c'est fait dans `main.ts` via `app.enableCors()`.
 
-**Validation de configuration (Zod)** — au démarrage, l'app vérifie que toutes les variables d'environnement nécessaires (`DATABASE_URL`, `PORT`...) sont présentes et bien formées, via un schéma Zod (`env.validation.ts`). Si une variable manque, l'app refuse de démarrer avec un message clair, plutôt que de planter plus tard avec une erreur cryptique.
+**Validation de configuration (Zod)** — au démarrage, l'app vérifie que toutes les variables d'environnement nécessaires (`DATABASE_URL`, `BACKEND_PORT`...) sont présentes et bien formées, via un schéma Zod (`env.validation.ts`). Si une variable manque, l'app refuse de démarrer avec un message clair, plutôt que de planter plus tard avec une erreur cryptique.
 
 **Health check** — l'endpoint `GET /api/health` (via `@nestjs/terminus`) vérifie que l'API tourne ET que la connexion à la base de données fonctionne. C'est ce type d'endpoint qu'interroge un outil d'infrastructure (Docker, un load balancer...) pour savoir si l'application est en bon état.
 
@@ -164,7 +168,15 @@ Cette section résume, en langage simple, chaque brique du projet — utile si t
 
 **Angular : injection de dépendances** — comme côté Nest, Angular fournit automatiquement une instance des services aux classes qui en ont besoin. `@Injectable({ providedIn: 'root' })` crée un service accessible partout dans l'app sans déclaration manuelle dans un module.
 
-**Angular : `HttpClient` et `Observable`** — le service `TasksService` du frontend utilise `HttpClient` pour appeler l'API, et chaque appel renvoie un `Observable` (pas une `Promise`) : un flux de données "paresseux" qui ne se déclenche que lorsqu'un composant s'y abonne (`.subscribe()`).
+**Angular : `HttpClient` et `Observable`** — le service `TasksService` du frontend utilise `HttpClient` pour appeler l'API, et chaque appel renvoie un `Observable` (pas une `Promise`) : un flux de données "paresseux" qui ne se déclenche que lorsqu'un composant s'y abonne (`.subscribe()`). Contrairement à un WebSocket, ça reste une requête ponctuelle classique (une réponse, puis le flux se termine) — pas un flux temps réel continu.
+
+**Angular : `signal()`** — une "boîte" réactive qui contient une valeur (`tasks`, `isLoading`...) : quand on la modifie avec `.set()` ou `.update()`, Angular sait automatiquement quelles parties du template doivent se réafficher, sans qu'on ait à le demander explicitement. C'est différent d'une propriété normale (comme `newTitle`, liée au formulaire via `[(ngModel)]`), qui elle est juste lue/écrite directement.
+
+**Angular : les decorators (`@Component`, `@Injectable`...)** — comme côté Nest (`@Controller`, `@Injectable`), ce sont des annotations qui ajoutent des métadonnées à une classe pour d'autres outils (ici, Angular). Ce n'est **pas** le design pattern "Decorator" du Gang of Four (qui enveloppe un objet à l'exécution pour lui ajouter un comportement) — c'est une confusion courante, mais les decorators TypeScript sont purement déclaratifs.
+
+**Angular : `@if` / `@for`** — le contrôle du flux d'affichage directement dans le template (remplace les anciens `*ngIf`/`*ngFor`). `@if (condition) { ... } @else { ... }` affiche un bloc selon une condition ; `@for (item of liste; track item.id) { ... }` répète un bloc pour chaque élément d'un tableau (le `track` aide Angular à identifier quel élément a changé, plutôt que de tout redessiner).
+
+**Angular : `[binding]` vs `(événement)` vs `[(ngModel)]`** — trois syntaxes différentes dans un template : `[checked]="task.completed"` (crochets) lit une valeur de la classe vers l'écran ; `(change)="toggleCompleted(task)"` (parenthèses) réagit à un événement de l'écran vers la classe (équivalent d'un `addEventListener`) ; `[(ngModel)]="newTitle"` (les deux à la fois, "banane dans une boîte") fait les deux en même temps — la case à cocher des tâches utilise volontairement `[checked]` + `(change)` séparément plutôt que `[(ngModel)]`, pour garder le contrôle sur l'appel à l'API avant de mettre à jour l'affichage.
 
 **Environnements Angular** — `environment.ts` et `environment.development.ts` contiennent chacun l'URL de l'API adaptée au contexte (relative en production, `http://localhost:3001/api` en développement). Le bundler remplace l'un par l'autre au moment du build, selon la configuration utilisée.
 
@@ -179,3 +191,5 @@ Cette section résume, en langage simple, chaque brique du projet — utile si t
 - **`Waiting for backend:serve:development in another nx process`** : un ancien processus `nx serve` traîne encore sur le port. Utiliser `pnpm backend:dev`, qui le tue automatiquement avant de redémarrer.
 - **Erreurs `pnpm` liées à la version de Node** : lancer `nvm use` (le projet a besoin de Node 22, voir `.nvmrc`).
 - **`ERR_PNPM_IGNORED_BUILDS`** au premier `pnpm install` : lancer `pnpm approve-builds` et valider les paquets légitimes (build natif) — refuser les paquets purement liés à de la télémétrie (voir `pnpm-workspace.yaml` pour un exemple déjà tranché).
+- **Le frontend démarre sur le port 3001 au lieu de 4200** : Nx charge automatiquement le `.env` racine pour toutes les commandes, y compris `nx serve frontend` — si ce fichier contient une variable trop générique comme `PORT`, Angular la lit aussi. C'est justement pourquoi la variable du backend s'appelle `BACKEND_PORT` et pas `PORT`.
+- **`Cannot find module 'xxx'` alors que tout semblait installé** : vérifier que la dépendance est bien listée dans `package.json` (`grep "xxx" package.json`) avant de blâmer `node_modules` — un `pnpm install` ne réinstalle que ce qui est déclaré dans `package.json`, il ne "invente" rien à partir de `node_modules` existant.
