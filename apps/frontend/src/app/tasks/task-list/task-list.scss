@@ -1,0 +1,22 @@
+.task-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.task-item {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
+
+  // "&.completed" en SCSS = ".task-item.completed" une fois compilé :
+  // applique ce style seulement quand la classe "completed" est présente
+  // sur le même élément (celle qu'on ajoute avec [class.completed] côté
+  // template).
+  &.completed span {
+    text-decoration: line-through;
+    color: #888;
+  }
+}

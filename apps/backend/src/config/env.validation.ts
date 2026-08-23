@@ -14,7 +14,12 @@ export const envSchema = z.object({
     .enum(['development', 'production', 'test'])
     .default('development'),
 
-  PORT: z.coerce.number().int().positive().default(3000),
+  // Nommé BACKEND_PORT (et pas juste PORT) volontairement : dans un
+  // monorepo avec plusieurs services, "PORT" est un nom trop générique —
+  // beaucoup d'outils (dont le serveur de dev Angular) le lisent
+  // automatiquement s'il est présent dans l'environnement, ce qui causait
+  // un conflit de port avec le frontend.
+  BACKEND_PORT: z.coerce.number().int().positive().default(3000),
 
   DATABASE_URL: z
     .string()

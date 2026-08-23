@@ -1,2 +1,11 @@
-<app-nx-welcome></app-nx-welcome>
-<router-outlet></router-outlet>
+<header class="app-header">
+  <h1>{{ title }}</h1>
+</header>
+
+<main>
+  <!-- router-outlet : Angular remplace ce tag par le composant associé à
+       l'URL courante (défini dans app.routes.ts). Pour l'instant appRoutes
+       est vide, donc rien ne s'affiche ici tant qu'on n'a pas ajouté le
+       premier écran. -->
+  <router-outlet></router-outlet>
+</main>

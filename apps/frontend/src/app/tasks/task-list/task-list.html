@@ -1,0 +1,40 @@
+<h2>Mes tâches</h2>
+
+<!-- (ngSubmit) : événement spécial du <form>, différent de (click) sur le
+     bouton — il se déclenche à la fois si on clique sur le bouton ET si on
+     appuie sur Entrée dans le champ, et il empêche automatiquement le
+     comportement par défaut d'un <form> HTML classique (recharger toute la
+     page). C'est pour ça qu'on met la logique sur le <form>, pas sur le
+     bouton.
+     [(ngModel)]="newTitle" : le two-way binding — tape dans le champ, et
+     this.newTitle se met à jour en direct dans la classe (et vice-versa).
+     name="title" est obligatoire : Angular en a besoin pour suivre ce
+     champ précis à l'intérieur du formulaire. -->
+<form (ngSubmit)="onSubmit()">
+  <input
+    type="text"
+    [(ngModel)]="newTitle"
+    name="title"
+    placeholder="Nouvelle tâche"
+  />
+  <button type="submit">Ajouter</button>
+</form>
+
+@if (isLoading()) {
+  <p>Chargement...</p>
+} @else if (tasks().length === 0) {
+  <p>Aucune tâche pour l'instant.</p>
+} @else {
+  <ul class="task-list">
+    @for (task of tasks(); track task.id) {
+      <!-- [class.completed]="task.completed" : une variante du property
+           binding qu'on a déjà vu ([disabled]="..."), spécialisée pour les
+           classes CSS. Elle ajoute la classe "completed" sur ce <li>
+           UNIQUEMENT si task.completed vaut true — et l'enlève
+           automatiquement si ça redevient false. -->
+      <li class="task-item" [class.completed]="task.completed">
+        <span>{{ task.title }}</span>
+      </li>
+    }
+  </ul>
+}
